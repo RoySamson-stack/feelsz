@@ -9,20 +9,25 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 # Sample dataset (replace with your own dataset)
-# ...
+data = {
+    'song': ['Song1', 'Song2', 'Song3', 'Song4', 'Song5'],
+    'lyrics': ['happy lyrics', 'sad lyrics', 'happy song', 'sad song', 'upbeat lyrics'],
+    'mood': ['happy', 'sad', 'happy', 'sad', 'happy']
+}
 
-# Spotify API credentials
-SPOTIPY_CLIENT_ID = 'your_client_id'
-SPOTIPY_CLIENT_SECRET = 'your_client_secret'
-SPOTIPY_REDIRECT_URI = 'your_redirect_uri'
+df = pd.DataFrame(data)
 
-# Set up Spotify API authentication
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,
-                                               client_secret=SPOTIPY_CLIENT_SECRET,
-                                               redirect_uri=SPOTIPY_REDIRECT_URI,
-                                               scope="playlist-modify-public"))
+# Split the data into training and testing sets
+train_data, test_data = train_test_split(df, test_size=0.2, random_state=42)
 
-# ...
+# Encode the mood labels
+le = LabelEncoder()
+train_data['encoded_mood'] = le.fit_transform(train_data['mood'])
+test_data['encoded_mood'] = le.transform(test_data['mood'])
+
+# Define and train the model (using lyrics as features)
+model = make_pipeline(CountVectorizer(), RandomForestClassifier())
+model.fit(train_data['lyrics'], train_data['encoded_mood'])
 
 # Predict the mood for a new song
 new_song_lyrics = ['energetic beats', 'calm melody', 'uplifting lyrics']
@@ -30,6 +35,17 @@ new_song_prediction = model.predict(new_song_lyrics)
 predicted_new_song_mood = le.inverse_transform(new_song_prediction)
 
 print(f"Predicted mood for the new song: {predicted_new_song_mood[0]}")
+
+# Set up Spotify API authentication
+SPOTIPY_CLIENT_ID = 'e49c1214df8148858517de9bf4c7e230'
+SPOTIPY_CLIENT_SECRET = 'edbdaa10bdbf4782a37d62bc92a54e53'
+SPOTIPY_REDIRECT_URI = 'spotify.com'
+
+# Set up Spotify API authentication
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,
+                                               client_secret=SPOTIPY_CLIENT_SECRET,
+                                               redirect_uri=SPOTIPY_REDIRECT_URI,
+                                               scope="playlist-modify-public"))
 
 # Create a playlist on Spotify based on the predicted mood
 playlist_name = f"{predicted_new_song_mood[0]} Playlist"
